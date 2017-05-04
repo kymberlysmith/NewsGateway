@@ -1,0 +1,2 @@
+# NewsGateway
+A news app.
