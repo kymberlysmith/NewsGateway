@@ -80,12 +80,8 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        sourcelist= new ArrayList<>(5);
-        sourcelist.add("test1");
-        sourcelist.add("test2");
-        sourcelist.add("test3");
-        sourcelist.add("test4");
-        sourcelist.add("test5");
+
+        sourcelist= new ArrayList<>();
 
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -103,7 +99,15 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
 
+        //handle fragments for swiping
+        //still need to handle pic urls and no pic case
         articleFragments=getFragments();
+
+        pageAdapter = new PageAdapter(getSupportFragmentManager());
+        pager = (ViewPager) findViewById(R.id.viewpager);
+        pager.setAdapter(pageAdapter);
+
+        // download sources, all sources at first
 
         new NewsSourceDownloader(this, category).execute();
 
@@ -210,12 +214,29 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
         //open articles!!!4
         //
 
+        //change app bar heading
+
+        setTitle(sourcelist.get(position));
+
         source =sourceMap.get(sourcelist.get(position)).getiD();
-        sendArticlesReq();
-        articleFragments=getFragments();
+        sendArticlesReq();//seems to work!!! up until this point at least
+
+        //
+        ArrayList<Article> fakeArticles = new ArrayList<>();//pageAdapter is null here? seems incorrect
+        for(int i=0;i<5; i++){
+            fakeArticles.add(new Article("author"+i, "","","", "", "", ""));
+        }
+
+        //articleFragments=getFragments();
+
+        updateArticles(fakeArticles);
+
+        //
+/*
+
         pageAdapter=new PageAdapter(getSupportFragmentManager());
         pager=(ViewPager)findViewById(R.id.viewpager);
-        pager.setAdapter(pageAdapter);
+        pager.setAdapter(pageAdapter);*/
 
         Log.d(TAG, "selectItem");
 
@@ -264,16 +285,22 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
 
     public void updateArticles(ArrayList<Article> aList){
 
-        sourcelist.clear();
+        //sourcelist.clear();
         //if(!sourceMap.isEmpty()){sourceMap.clear();} causes crash and may not be necessary?
 
-        sourceMap = new HashMap<>(aList.size());
+        //sourceMap = new HashMap<>(aList.size());
+        for (int i = 0; i < pageAdapter.getCount(); i++)
+            pageAdapter.notifyChangeInPosition(i);
 
-        for(Article a:aList){
+        articleFragments.clear();
 
+        for (Article a:aList) {
+            articleFragments.add(ArticleFragment.newInstance(a.getAuthor()));
+            //pageAdapter.notifyChangeInPosition(i);
         }
 
-        mDrawerList.setAdapter(new ArrayAdapter<>(this, R.layout.drawer_list_item, sourcelist));
+        pageAdapter.notifyDataSetChanged();
+        pager.setCurrentItem(0);
 
     }
 

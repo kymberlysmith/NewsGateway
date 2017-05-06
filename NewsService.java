@@ -23,13 +23,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 
 
-public class NewsService extends Service implements Serializable {
+public class NewsService extends Service{
 
     private static final String TAG = "NewsService";
     private boolean running = true;
     AtomicBoolean set;
-    //private ArrayList<Article> articleArrayList = new ArrayList<>();
-    private List articleArrayList = Collections.synchronizedList(new ArrayList<>());
+    private ArrayList<Article> articleArrayList = new ArrayList<>();
+    //private List articleArrayList = Collections.synchronizedList(new ArrayList<>());
 
 
     private static final String BROADCAST_ARTICLES_LIST="BROADCAST_ARTICLES_LIST";
@@ -41,14 +41,14 @@ public class NewsService extends Service implements Serializable {
 
     @Override
     public void onCreate() {
-        super.onCreate();
+        /*super.onCreate();
         serviceReceiver = new ServiceReceiver();
         IntentFilter filter = new IntentFilter(MainActivity.BROADCAST_ARTICLES_REQUEST);
         registerReceiver(serviceReceiver, filter);
 
         set=new AtomicBoolean();
 
-        Log.d(TAG, " onCreate");
+        Log.d(TAG, " onCreate");*/
     }
 
     public void setArticles(List a){
@@ -56,12 +56,13 @@ public class NewsService extends Service implements Serializable {
             articleArrayList.clear();
 
         }*/
-
-        articleArrayList=Collections.synchronizedList(new ArrayList<>(a));
+        articleArrayList.clear();
+        articleArrayList.addAll(a);
+        //articleArrayList=Collections.synchronizedList(new ArrayList<>(a));
         set = new AtomicBoolean(true);
-        Log.d(TAG, " setArticles: articleArrayList set, size: " + articleArrayList.size()+", set = " +set);
+        Log.d(TAG, " setArticles: articleArrayList set, size: " + articleArrayList.size()+", set = " +set);//always has length, indicating that size is not 0
 
-        sendMessage("plz");
+        //sendMessage("plz");
 
     }
 
@@ -73,35 +74,44 @@ public class NewsService extends Service implements Serializable {
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
 
-        sendMessage("Service Started");
+        serviceReceiver = new ServiceReceiver();
+        IntentFilter filter = new IntentFilter(MainActivity.BROADCAST_ARTICLES_REQUEST);
+        registerReceiver(serviceReceiver, filter);
+
+        //sendMessage("Service Started");
         Log.d(TAG, " onStartCommand");
         //new thread for long running tasks because of ANR
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < 30; i++) {
+                //for (int i = 0; i < 30; i++) {
                     if (!running) {
                         Log.d(TAG, "run: Thread loop stopped early");
-                        break;
+                        //break;
                     }
 
-                    Log.d(TAG, "run: " + i);
+                    //Log.d(TAG, "run: " + i);
 
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    while(running) {
+                        if(articleArrayList.size() < 1){
+                            Log.d(TAG, "IF = " + articleArrayList.size());//size of arrayList is always 0 at this point, always.
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        else {
+                            //Log.d(TAG, "thread val set = " + set);
+                            //if (set.toString().equals("true")) {
+                            // sendBroadcast(intent);
+                            Log.d(TAG, "Else = " + articleArrayList.size());
+                            sendMessage("Service Broadcast Message " + Integer.toString(1));
+                            //}
+                        }
                     }
-
-                    Log.d(TAG, "thread val set = " + set);
-                    if(set.toString().equals("true"))
-                    {
-                        sendBroadcast(intent);
-                        Log.d(TAG, "onStartCommand, length of articleArrayList = " + articleArrayList.size());
-                        sendMessage("Service Broadcast Message " + Integer.toString(i + 1));
-                    }
-                }
+                //}
                 sendMessage("Service Done Sending Broadcasts");
                 Log.d(TAG, "run: Ending loop");
             }
@@ -129,10 +139,21 @@ public class NewsService extends Service implements Serializable {
             {
                 ArrayList<Article> arrayList = new ArrayList<Article>(articleArrayList);
 
-                Log.d(TAG, "sendMessage: arrayList size "+arrayList.size());
+                Log.d(TAG, "sendMessage: arrayList size "+arrayList.size()+"ARTICLES_LIST"+MainActivity.ARTICLES_LIST+" BROADCAST_LIST "+MainActivity.BROADCAST_ARTICLES_LIST);
                 Intent intent = new Intent();
                 intent.setAction(MainActivity.BROADCAST_ARTICLES_LIST);
-                intent.putExtra(MainActivity.ARTICLES_LIST, arrayList);
+                intent.putExtra(MainActivity.ARTICLES_LIST, (Serializable) arrayList);
+
+
+                String test;
+                if(intent.hasExtra(MainActivity.ARTICLES_LIST)){test="not null";}
+                else{test="null";}
+
+                Log.d(TAG, "sendMessage: is intent null? "+ test );
+
+                for(Article a : arrayList){
+                Log.d(TAG, "sendMessage: arrayList Article title:"+a.getTitle());
+                }
                 sendBroadcast(intent);
             }
     }

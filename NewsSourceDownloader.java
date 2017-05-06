@@ -43,6 +43,14 @@ public class NewsSourceDownloader extends AsyncTask<String, Integer, String> {
         }else{catString="";}
         Log.d(TAG, "constructor");}
 
+    public NewsSourceDownloader(String c){
+        category=c;
+        if(!c.equals("")){
+            catString="&category="+c;
+        }else{catString="";}
+        Log.d(TAG, "constructor for test");}
+
+
     @Override
     protected void onPreExecute() {
         Log.d(TAG, "Loading source data");
@@ -89,7 +97,41 @@ public class NewsSourceDownloader extends AsyncTask<String, Integer, String> {
         return sb.toString();
     }
 
-    private ArrayList<Source> parseJSON(String s){
+    public String getJSON()
+    {
+        Uri dataUri = Uri.parse(newsSourcesURL +catString+ apiKeyStr); //must be changed to real URL
+        String urlToUse=dataUri.toString();
+        Log.d(TAG, "doInBackground:" + urlToUse);
+
+        StringBuilder sb = new StringBuilder();
+
+        try{
+            URL url = new URL(urlToUse);
+
+            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+            conn.setRequestMethod("GET");
+            InputStream is = conn.getInputStream();
+            BufferedReader reader = new BufferedReader((new InputStreamReader(is)));//hasn't crashed yet fabulous
+
+            String line;
+            while((line=reader.readLine())!=null){
+                sb.append(line).append('\n'); //CHECK AND CHANGE
+            }
+
+            Log.d(TAG, "doInBackground: "+sb.toString());
+
+        } catch (Exception e){
+            Log.e(TAG, "doInBackground: ", e);
+            return null;
+        }
+
+        Log.d(TAG, "doInBackground: " +sb.toString());
+
+        return sb.toString();
+
+    }
+
+    public ArrayList<Source> parseJSON(String s){
 
         ArrayList<Source> sourceArrayList = new ArrayList<>();
 

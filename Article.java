@@ -1,10 +1,15 @@
 package com.example.k.newsgateway;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import java.io.Serializable;
+
 /**
  * Created by K on 4/30/2017.
  */
 
-public class Article {
+public class Article implements Serializable, Parcelable {
 
     public String author;
 
@@ -74,5 +79,38 @@ public class Article {
     public String urlToImage;
     public String source;
 
+    public int describeContents(){
+        return hashCode();
+    }
 
+    public static final Parcelable.Creator<Article> CREATOR
+            = new Parcelable.Creator<Article>() {
+        public Article createFromParcel(Parcel in) {
+            return new Article(in);
+        }
+        public Article[] newArray(int size) {
+            return new Article[size];
+        }
+    };
+
+    private Article(Parcel in){
+
+        author=in.readString();
+        title=in.readString();
+        description=in.readString();
+        url=in.readString();
+        urlToImage=in.readString();
+        source=in.readString();
+
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(author);
+        dest.writeString(title);
+        dest.writeString(description);
+        dest.writeString(url);
+        dest.writeString(urlToImage);
+        dest.writeString(source);
+    }
 }
